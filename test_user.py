@@ -3,13 +3,12 @@ import sqlite3
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.builtin import CommandStart
 from keyboards.default.def_menu import *
-from loader import dp
 from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from database import *
-from handlers.users.describe import *
+from describe import *
 from keyboards.inline.inline_buttons import *
-from states.State import *
+from state import *
 
 ROOMS_PER_PAGE = 10
 

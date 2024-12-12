@@ -9,7 +9,7 @@ from aiogram.utils.executor import start_polling
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from database import *
-from handlers.users.describe import *
+from describe import *
 
 API_TOKEN = '7590904027:AAHBAvFGfsRkD3jFAkoLpF90YsjFlIZZKbk'
 

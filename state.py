@@ -6,4 +6,3 @@ class UserStates(StatesGroup):
     get_fio = State()
     get_email = State()
     choose_menu = State()
-
