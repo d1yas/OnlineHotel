@@ -9,6 +9,9 @@ Byudjetli turar joy qidirayotganlar uchun hamyonbop xona.
 🌐 Bepul Wi-Fi.
 🪑 Minimal mebel to'plami: stol, stul, shkaf.
 🧹 So'rov bo'yicha kundalik tozalash.
+
+NARXI: 10$ (1kun)
+
 """
 description_for_standart = """
 🛏️ Standart (Standard)
@@ -23,7 +26,9 @@ Komfortli xona sayohatchilar va ishbilarmonlar uchun.
 🍵 Choynak, krujkalar, choy va qahva.
 🧥 Garderob va yozish stoli.
 🧹 Kundalik tozalash.
-📌 Eslatma: Oilalar va yakka sayohatchilar uchun universal tanlov.    
+📌 Eslatma: Oilalar va yakka sayohatchilar uchun universal tanlov.  
+
+NARXI: 30$ (1kun)
 """
 description_for_comfort = """
 🛏️ Komfort (Comfort)
@@ -41,6 +46,8 @@ Yuqori darajadagi qulaylikka ega xona.
 💻 Ish stoli va qulay stul.
 🧴 Yaxshilangan shaxsiy gigiena vositalari.
 📌 Eslatma: Uzun muddatli sayohatlar yoki yanada qulayroq dam olish uchun mos.
+
+NARXI: 80$ (1kun)
 """
 description_for_business = """
 💼 Biznes (Business)
@@ -57,6 +64,8 @@ Ishbilarmon sayohatlar uchun ideal variant.
 ❄️ Konditsioner, choynak, kofe mashinasi.
 💻 Katta yozish stoli, ergonomik stul.
 📌 Eslatma: Komfort va qulaylikni qadrlaydigan mutaxassislar uchun.
+
+NARXI: 300$ (1kun)
 """
 description_for_vip = """
 👑 VIP
@@ -73,4 +82,6 @@ description_for_vip = """
 🍽️ Xonada xizmat 24/7.
 🚗 Bepul transfer va lounge-zonaga kirish imkoniyati.
 📌 Eslatma: Lyuks va premium sifatni qadrlaydigan mehmonlar uchun.    
+
+NARXI: 800$ (1kun)
 """

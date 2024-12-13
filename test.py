@@ -1,6 +1,5 @@
 import sqlite3
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.builtin import CommandStart
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ContentType
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -40,13 +39,6 @@ async def start_func(message: types.Message):
     user = get_user_by_id(user_id)
 
     if user:
-        # buttons = [
-        #     KeyboardButton("Xonalarni bron qilish"),
-        #     KeyboardButton("Maning bronlarim"),
-        #     KeyboardButton("Mehmonxona haqida", web_app=WebAppInfo(url="https://hotel-uz.com/uz/booking/")),
-        # ]
-        # keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
-        # keyboard.add(*buttons)
         await message.answer(f"Assalomu Aleykum {user['fio']}!", reply_markup=menu_buttons)
     else:
         await message.answer("Assalomu Aleykum!")
@@ -82,12 +74,6 @@ async def menu_func(message: types.Message, state: FSMContext):
     add_user(user_id=message.from_user.id, phone=phone, fio=fio, email=email)
 
     await state.finish()
-    # buttons = [
-    #     KeyboardButton("Xonalarni bron qilish"),
-    #     KeyboardButton("Maning bronlarim"),
-    #     KeyboardButton("Mehmonxona haqida", web_app=WebAppInfo(url="https://hotel-uz.com/uz/booking/")),
-    # ]
-    # keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
     await message.answer("Siz muafaqatli royxatdan otdingiz!", reply_markup=menu_buttons)
     await UserStates.menu.set()
 
@@ -164,31 +150,6 @@ async def select_room(call: types.CallbackQuery):
     await call.message.answer(f"Xona {room_number}. Iltimos, odamlar sonini tanlang:", reply_markup=keyboard)
 
 
-# @dp.callback_query_handler(lambda call: call.data.startswith(("increase_", "decrease_", "book_")))
-# async def manage_people(call: types.CallbackQuery):
-#     action, room_number, people = call.data.split("_")
-#     room_number = int(room_number)
-#     people = int(people)
-#
-#     if action == "increase":
-#         people += 1
-#     elif action == "decrease":
-#         if people > 1:
-#             people -= 1
-#     elif action == "book":
-#         move_room_to_booked(room_number, people)
-#         await call.message.answer(f"Xona {room_number} {people} kishiga muvaffaqiyatli bron qilindi.")
-#         return
-#
-#     buttons = [
-#         InlineKeyboardButton("-", callback_data=f"decrease_{room_number}_{people}"),
-#         InlineKeyboardButton(str(people), callback_data=f"static_{room_number}_{people}"),
-#         InlineKeyboardButton("+", callback_data=f"increase_{room_number}_{people}"),
-#         InlineKeyboardButton("Bron qilish", callback_data=f"book_{room_number}_{people}"),
-#     ]
-#     keyboard = InlineKeyboardMarkup(row_width=3)
-#     keyboard.add(*buttons)
-#     await call.message.edit_reply_markup(reply_markup=keyboard)
 
 @dp.callback_query_handler(lambda call: call.data.startswith(("increase_", "decrease_", "book_")))
 async def manage_people(call: types.CallbackQuery):
@@ -257,15 +218,6 @@ async def rate_handler(message: types.Message):
         await message.answer(f"📊 Siz allaqachon baho bergansiz. Rahmat!\n"
                              f"📈 Hozirgi o'rtacha baho: {round(average_rating, 2)}")
     else:
-        # buttons = [
-        #     InlineKeyboardButton("⭐", callback_data="rate_1"),
-        #     InlineKeyboardButton("⭐⭐", callback_data="rate_2"),
-        #     InlineKeyboardButton("⭐⭐⭐", callback_data="rate_3"),
-        #     InlineKeyboardButton("⭐⭐⭐⭐", callback_data="rate_4"),
-        #     InlineKeyboardButton("⭐⭐⭐⭐⭐", callback_data="rate_5"),
-        # ]
-        # keyboard = InlineKeyboardMarkup()
-        # keyboard.add(*buttons)
         await message.answer("🌟 Iltimos, reytingingizni tanlang:", reply_markup=star_choose)
 
 @dp.callback_query_handler(lambda call: call.data.startswith("rate_"))
