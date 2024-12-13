@@ -1,7 +1,6 @@
 # import sqlite3
 # from aiogram.dispatcher.filters.builtin import CommandStart
 # from keyboards.default.def_menu import choose_class_button
-# from loader import dp
 # from aiogram import  types
 # from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 # from database import *
@@ -102,4 +101,4 @@
 #     keyboard = InlineKeyboardMarkup(row_width=3)
 #     keyboard.add(*buttons)
 #     await call.message.edit_reply_markup(reply_markup=keyboard)
-
+#

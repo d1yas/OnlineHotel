@@ -1,14 +1,24 @@
-import sqlite3
-
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.builtin import CommandStart
-from keyboards.default.def_menu import *
-from aiogram import types
+from aiogram import Bot, Dispatcher, types
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ContentType
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import WebAppInfo
+from aiogram.contrib.middlewares.logging import LoggingMiddleware
+from aiogram.utils.executor import start_polling
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher.filters.state import State, StatesGroup
+from keyboards.default.def_menu import *
+from keyboards.inline.inline_buttons import *
 from database import *
 from describe import *
-from keyboards.inline.inline_buttons import *
+from config import *
 from state import *
+
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher(bot, storage=MemoryStorage())
+dp.middleware.setup(LoggingMiddleware())
+
 
 ROOMS_PER_PAGE = 10
 
@@ -145,3 +155,5 @@ async def manage_people(call: types.CallbackQuery):
 
 
 
+if __name__ == '__main__':
+    start_polling(dp, skip_updates=True)

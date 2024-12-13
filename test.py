@@ -2,16 +2,22 @@ import sqlite3
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.builtin import CommandStart
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo, ContentType, InlineKeyboardButton, \
-    InlineKeyboardMarkup
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ContentType
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import WebAppInfo
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.utils.executor import start_polling
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from database import *
 from describe import *
+from config import *
+from aiogram.types import Message
+from state import *
+from keyboards.default.def_menu import *
+from keyboards.inline.inline_buttons import *
+from aiogram.dispatcher.filters import Command
 
-API_TOKEN = '7590904027:AAHBAvFGfsRkD3jFAkoLpF90YsjFlIZZKbk'
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
@@ -26,114 +32,27 @@ def get_paged_rooms(rooms, page):
     return rooms[start_idx:end_idx]
 
 
-# Состояния
-class UserStates(StatesGroup):
-    send_phone = State()
-    get_fio = State()
-    get_email = State()
 
 
-# Настройка базы данных
-connect = sqlite3.connect('hotel_db.db', check_same_thread=False)
-cursor = connect.cursor()
-
-cursor.execute(
-    """
-    CREATE TABLE IF NOT EXISTS users (
-        user_id INTEGER PRIMARY KEY,
-        phone TEXT,
-        fio TEXT,
-        email TEXT
-    )
-    """
-)
-
-cursor.execute(
-    """
-    CREATE TABLE IF NOT EXISTS empty_rooms (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        room_number INTEGER,
-        room_class TEXT
-    )
-    """
-)
-
-cursor.execute(
-    """
-    CREATE TABLE IF NOT EXISTS booked_rooms (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        room_number INTEGER,
-        room_class TEXT,
-        people_count INTEGER,
-        phone TEXT,
-        fio TEXT,
-        email TEXT
-    )
-    """
-)
-
-connect.commit()
-
-
-def add_user(user_id, phone, fio, email):
-    cursor.execute(
-        "INSERT INTO users (user_id, phone, fio, email) VALUES (?, ?, ?, ?)",
-        (user_id, phone, fio, email)
-    )
-    connect.commit()
-
-
-def get_user_by_id(user_id):
-    cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
-    row = cursor.fetchone()
-    if row:
-        return {"user_id": row[0], "phone": row[1], "fio": row[2], "email": row[3]}
-    return None
-
-
-def initialize_rooms():
-    room_classes = {
-        "economy": 30,
-        "standard": 30,
-        "comfort": 15,
-        "business": 15,
-        "vip": 5,
-    }
-    room_number = 1
-    for room_class, count in room_classes.items():
-        for _ in range(count):
-            cursor.execute(
-                "INSERT INTO empty_rooms (room_number, room_class) VALUES (?, ?)",
-                (room_number, room_class)
-            )
-            room_number += 1
-    connect.commit()
-
-
-cursor.execute("SELECT COUNT(*) FROM empty_rooms")
-if cursor.fetchone()[0] == 0:
-    initialize_rooms()
-
-
-@dp.message_handler(commands=['start'], state="*")
+@dp.message_handler(commands=['start'])
 async def start_func(message: types.Message):
     user_id = message.from_user.id
     user = get_user_by_id(user_id)
 
     if user:
-        buttons = [
-            KeyboardButton("Xonalarni bron qilish"),
-            KeyboardButton("Maning bronlarim"),
-            KeyboardButton("Mehmonxona haqida", web_app=WebAppInfo(url="https://hotel-uz.com/uz/booking/")),
-        ]
-        keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
-        keyboard.add(*buttons)
-        await message.answer(f"Assalomu Aleykum {user['fio']}!", reply_markup=keyboard)
+        # buttons = [
+        #     KeyboardButton("Xonalarni bron qilish"),
+        #     KeyboardButton("Maning bronlarim"),
+        #     KeyboardButton("Mehmonxona haqida", web_app=WebAppInfo(url="https://hotel-uz.com/uz/booking/")),
+        # ]
+        # keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
+        # keyboard.add(*buttons)
+        await message.answer(f"Assalomu Aleykum {user['fio']}!", reply_markup=menu_buttons)
     else:
         await message.answer("Assalomu Aleykum!")
         await message.answer("Royxatdan otish uchun, Iltimos nomeringizni yuboring!",
                              reply_markup=ReplyKeyboardMarkup(resize_keyboard=True).add(
-                                 KeyboardButton("Telefon raqamni yuborish", request_contact=True)))
+                                 KeyboardButton("Telefon raqamni yuborish",request_contact=True, one_time_keyboard=True)))
         await UserStates.send_phone.set()
 
 
@@ -163,18 +82,20 @@ async def menu_func(message: types.Message, state: FSMContext):
     add_user(user_id=message.from_user.id, phone=phone, fio=fio, email=email)
 
     await state.finish()
-    buttons = [
-        KeyboardButton("Xonalarni bron qilish"),
-        KeyboardButton("Maning bronlarim"),
-        KeyboardButton("Mehmonxona haqida", web_app=WebAppInfo(url="https://hotel-uz.com/uz/booking/")),
-    ]
-    keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
-    await message.answer("Siz muafaqatli royxatdan otdingiz!", reply_markup=keyboard)
+    # buttons = [
+    #     KeyboardButton("Xonalarni bron qilish"),
+    #     KeyboardButton("Maning bronlarim"),
+    #     KeyboardButton("Mehmonxona haqida", web_app=WebAppInfo(url="https://hotel-uz.com/uz/booking/")),
+    # ]
+    # keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
+    await message.answer("Siz muafaqatli royxatdan otdingiz!", reply_markup=menu_buttons)
+    await UserStates.menu.set()
 
 
 @dp.message_handler(lambda message: not message.text.endswith('@gmail.com'), state=UserStates.get_email)
 async def invalid_email(message: types.Message):
     await message.answer("Iltimos, faqat @gmail.com bilan tugaydigan emailni kiriting.")
+
 
 
 @dp.message_handler(lambda message: message.text == "Xonalarni bron qilish")
@@ -243,6 +164,32 @@ async def select_room(call: types.CallbackQuery):
     await call.message.answer(f"Xona {room_number}. Iltimos, odamlar sonini tanlang:", reply_markup=keyboard)
 
 
+# @dp.callback_query_handler(lambda call: call.data.startswith(("increase_", "decrease_", "book_")))
+# async def manage_people(call: types.CallbackQuery):
+#     action, room_number, people = call.data.split("_")
+#     room_number = int(room_number)
+#     people = int(people)
+#
+#     if action == "increase":
+#         people += 1
+#     elif action == "decrease":
+#         if people > 1:
+#             people -= 1
+#     elif action == "book":
+#         move_room_to_booked(room_number, people)
+#         await call.message.answer(f"Xona {room_number} {people} kishiga muvaffaqiyatli bron qilindi.")
+#         return
+#
+#     buttons = [
+#         InlineKeyboardButton("-", callback_data=f"decrease_{room_number}_{people}"),
+#         InlineKeyboardButton(str(people), callback_data=f"static_{room_number}_{people}"),
+#         InlineKeyboardButton("+", callback_data=f"increase_{room_number}_{people}"),
+#         InlineKeyboardButton("Bron qilish", callback_data=f"book_{room_number}_{people}"),
+#     ]
+#     keyboard = InlineKeyboardMarkup(row_width=3)
+#     keyboard.add(*buttons)
+#     await call.message.edit_reply_markup(reply_markup=keyboard)
+
 @dp.callback_query_handler(lambda call: call.data.startswith(("increase_", "decrease_", "book_")))
 async def manage_people(call: types.CallbackQuery):
     action, room_number, people = call.data.split("_")
@@ -255,7 +202,8 @@ async def manage_people(call: types.CallbackQuery):
         if people > 1:
             people -= 1
     elif action == "book":
-        move_room_to_booked(room_number, people)
+        user_id = call.from_user.id
+        move_room_to_booked(user_id, room_number, people)
         await call.message.answer(f"Xona {room_number} {people} kishiga muvaffaqiyatli bron qilindi.")
         return
 
@@ -270,8 +218,78 @@ async def manage_people(call: types.CallbackQuery):
     await call.message.edit_reply_markup(reply_markup=keyboard)
 
 
+@dp.message_handler(text="Maning bronlarim")
+async def get_history(message: Message):
+    user_id = message.from_user.id
+    print(f"User ID: {user_id}")
+
+    cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
+    current_user = cursor.fetchone()
+
+    if current_user:
+        user_data = f"Sizning malumotlariz:\nTelefon raqam: {current_user[1]}\nToliq Ism (F.I.O): {current_user[2]}\nEmail: {current_user[3]}"
+
+        cursor.execute("SELECT room_number, room_class, people_count FROM booked_rooms WHERE user_id = ?", (user_id,))
+        booked_rooms = cursor.fetchall()
+
+        if booked_rooms:
+            rooms_info = "\n\nSizning bronlangan xonalariz:\n"
+            for room in booked_rooms:
+                rooms_info += f"Xona raqami: {room[0]}, Hotel LVL: {room[1]}, Odamlar soni: {room[2]}\n"
+        else:
+            rooms_info = "\n\nSizda bronlangan xonalar mavjud emas ."
+
+        await message.answer(user_data + rooms_info)
+    else:
+        await message.answer("Malumot topilmadi!")
 
 
+@dp.message_handler(text="Mexmonxonani baholash")
+async def rate_handler(message: types.Message):
+    user_id = message.from_user.id
+
+    cursor.execute("SELECT rating FROM ratings WHERE user_id = ?", (user_id,))
+    if cursor.fetchone():
+        # Calculate the average rating
+        cursor.execute("SELECT AVG(rating) FROM ratings")
+        average_rating = cursor.fetchone()[0]
+
+        await message.answer(f"📊 Siz allaqachon baho bergansiz. Rahmat!\n"
+                             f"📈 Hozirgi o'rtacha baho: {round(average_rating, 2)}")
+    else:
+        # buttons = [
+        #     InlineKeyboardButton("⭐", callback_data="rate_1"),
+        #     InlineKeyboardButton("⭐⭐", callback_data="rate_2"),
+        #     InlineKeyboardButton("⭐⭐⭐", callback_data="rate_3"),
+        #     InlineKeyboardButton("⭐⭐⭐⭐", callback_data="rate_4"),
+        #     InlineKeyboardButton("⭐⭐⭐⭐⭐", callback_data="rate_5"),
+        # ]
+        # keyboard = InlineKeyboardMarkup()
+        # keyboard.add(*buttons)
+        await message.answer("🌟 Iltimos, reytingingizni tanlang:", reply_markup=star_choose)
+
+@dp.callback_query_handler(lambda call: call.data.startswith("rate_"))
+async def rate_callback(call: types.CallbackQuery):
+    user_id = call.from_user.id
+    rating = int(call.data.split("_")[1])
+
+    cursor.execute("SELECT rating FROM ratings WHERE user_id = ?", (user_id,))
+    if cursor.fetchone():
+        cursor.execute("SELECT AVG(rating) FROM ratings")
+        average_rating = cursor.fetchone()[0]
+
+        await call.answer(f"📊 Siz allaqachon baho bergansiz.\n"
+                          f"📈 Hozirgi o'rtacha baho: {round(average_rating, 2)}", show_alert=True)
+        return
+
+    cursor.execute("INSERT INTO ratings (user_id, rating) VALUES (?, ?)", (user_id, rating))
+    connect.commit()
+
+    cursor.execute("SELECT AVG(rating) FROM ratings")
+    average_rating = cursor.fetchone()[0]
+
+    await call.message.answer(f"🌟 Siz {rating} baho berdingiz.\n📈 Hozirgi o'rtacha baho: {round(average_rating, 2)}")
+    await call.answer()
 
 if __name__ == '__main__':
     start_polling(dp, skip_updates=True)

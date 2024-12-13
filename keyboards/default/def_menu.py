@@ -1,4 +1,4 @@
-from aiogram.types import ReplyKeyboardMarkup,KeyboardButton
+from aiogram.types import ReplyKeyboardMarkup,KeyboardButton, WebAppInfo
 
 
 send_phone_button = ReplyKeyboardMarkup(
@@ -10,3 +10,15 @@ send_phone_button = ReplyKeyboardMarkup(
 
 )
 
+menu_buttons = ReplyKeyboardMarkup(
+    keyboard=[
+        [
+            KeyboardButton(text="Xonalarni bron qilish"),
+            KeyboardButton(text="Maning bronlarim"),
+            KeyboardButton(text="Mehmonxona haqida", web_app=WebAppInfo(url="https://hotel-uz.com/uz/booking/"))
+        ],
+        [
+            KeyboardButton(text="Mexmonxonani baholash")
+        ]
+    ],resize_keyboard=True
+)
