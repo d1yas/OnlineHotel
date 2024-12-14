@@ -15,7 +15,7 @@
 
  - For Debian (Ubuntu, Kali-Linux, Parrot)
 
-     ```source venv/bin/activate
+    ```source venv/bin/activate```
  
  - For Windows
  
