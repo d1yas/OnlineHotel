@@ -12,7 +12,7 @@ from config import API_TOKEN
 from keyboards.default.def_menu import menu_buttons
 from keyboards.inline.inline_buttons import confirm_buttons, star_choose
 from describe import *
-
+from send_email import send_booking_email
 
 
 ROOM_PRICES = {
@@ -40,7 +40,6 @@ ROOM_IMAGES = {
 }
 
 
-# States for booking
 class BookingStates(StatesGroup):
     get_phone = State()
     get_fio = State()
@@ -51,13 +50,11 @@ class BookingStates(StatesGroup):
     confirm_booking = State()
 
 
-# Initialization
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
 dp.middleware.setup(LoggingMiddleware())
 
 
-# Start handler
 @dp.message_handler(commands=['start'])
 async def start_handler(message: types.Message):
     user_id = message.from_user.id
@@ -73,7 +70,6 @@ async def start_handler(message: types.Message):
         await BookingStates.get_phone.set()
 
 
-# Phone handler
 @dp.message_handler(content_types=ContentType.CONTACT, state=BookingStates.get_phone)
 async def phone_handler(message: types.Message, state: FSMContext):
     phone_number = message.contact.phone_number
@@ -82,7 +78,6 @@ async def phone_handler(message: types.Message, state: FSMContext):
     await BookingStates.get_fio.set()
 
 
-# FIO handler
 @dp.message_handler(state=BookingStates.get_fio)
 async def fio_handler(message: types.Message, state: FSMContext):
     fio = message.text.strip()
@@ -94,7 +89,6 @@ async def fio_handler(message: types.Message, state: FSMContext):
     await BookingStates.get_email.set()
 
 
-# Email handler
 @dp.message_handler(lambda m: m.text.endswith("@gmail.com"), state=BookingStates.get_email)
 async def email_handler(message: types.Message, state: FSMContext):
     email = message.text.strip()
@@ -110,13 +104,12 @@ async def email_handler(message: types.Message, state: FSMContext):
     )
 
 
-# Invalid email handler
 @dp.message_handler(lambda m: not m.text.endswith("@gmail.com"), state=BookingStates.get_email)
 async def invalid_email_handler(message: types.Message):
     await message.answer("❗ Faqat @gmail.com bilan tugaydigan emailni kiriting.")
 
 
-# Booking rooms
+
 @dp.message_handler(lambda m: m.text == "Xonalarni bron qilish")
 async def book_rooms(message: types.Message):
     keyboard = InlineKeyboardMarkup(row_width=2).add(
@@ -129,7 +122,7 @@ async def book_rooms(message: types.Message):
     await message.answer("Xona turini tanlang:", reply_markup=keyboard)
 
 
-# Room class selection
+
 @dp.callback_query_handler(lambda c: c.data.startswith("class_"))
 async def class_selected(call: types.CallbackQuery, state: FSMContext):
     room_class = call.data.split("_")[1]
@@ -140,7 +133,6 @@ async def class_selected(call: types.CallbackQuery, state: FSMContext):
     room_number = rooms[0][1]  # First available room
     await state.update_data(room_class=room_class, room_number=room_number)
 
-    # Display room details with image
     with open(ROOM_IMAGES[room_class], "rb") as photo:
         await bot.send_photo(
             chat_id=call.from_user.id,
@@ -149,25 +141,21 @@ async def class_selected(call: types.CallbackQuery, state: FSMContext):
             reply_markup=None
         )
 
-    await call.message.answer("📅 Qaysi sanadan boshlab bron qilmoqchisiz? (Format: YYYY-MM-DD)")
+    await call.message.answer("📅 Qaysi sanadan boshlab bron qilmoqchisiz? (Format: YYYY-MM-DD)\n✅ Masalan: 2024.12.15")
     await BookingStates.get_start_date.set()
 
 
-# Start date input
 @dp.message_handler(state=BookingStates.get_start_date)
 async def start_date_handler(message: types.Message, state: FSMContext):
     date_input = message.text.strip()
     try:
-        # Replace '.' or '/' with '-' to normalize the format
         normalized_date = date_input.replace(".", "-").replace("/", "-")
         start_date = datetime.strptime(normalized_date, "%Y-%m-%d")
 
-        # Ensure the date is not in the past
         if start_date.date() < datetime.now().date():
             await message.answer("❗ Sanani kelajakdagi kunlar uchun kiriting (masalan: 2024-12-15).")
             return
 
-        # Save to state
         await state.update_data(start_date=start_date)
         await message.answer("⏳ Necha kun bron qilmoqchisiz?")
         await BookingStates.get_duration.set()
@@ -175,7 +163,7 @@ async def start_date_handler(message: types.Message, state: FSMContext):
     except ValueError:
         await message.answer(
             "❗ Sanani to'g'ri formatda kiriting: YYYY-MM-DD\n"
-            "✅ Masalan: 2024-12-15"
+            "✅ Masalan: 2024.12.15"
         )
 
 
@@ -257,10 +245,22 @@ async def manage_people_handler(call: types.CallbackQuery, state: FSMContext):
 async def confirm_booking(call: types.CallbackQuery, state: FSMContext):
     user_id = call.from_user.id
     data = await state.get_data()
-    bookings = get_booked_rooms(user_id)
-    print(bookings)
-
-    # Move room to booked_rooms with all details
+    
+    # Foydalanuvchi emailini olish
+    user_info = get_user_by_id(user_id)  # Bu funksiyada user ma'lumotlari (email) olinadi
+    user_email = user_info['email']
+    
+    # Booking ma'lumotlari
+    booking_details = (
+        f"🏨 Xona turi: {data['room_class'].capitalize()}\n"
+        f"🔢 Xona raqami: {data['room_number']}\n"
+        f"📅 Boshlanish kuni: {data['start_date'].strftime('%Y-%m-%d')}\n"
+        f"⏳ Davomiylik: {data['duration']} kun\n"
+        f"👥 Odamlar soni: {data['people']}\n"
+        f"💰Umumiy narx: {data['total_cost']}$"
+    )
+    
+    # Ma'lumotlarni databasega saqlash
     success = move_room_to_booked_with_date(
         user_id=user_id,
         room_number=data['room_number'],
@@ -268,21 +268,21 @@ async def confirm_booking(call: types.CallbackQuery, state: FSMContext):
         start_date=data['start_date'].strftime('%Y-%m-%d'),
         duration=data['duration'],
         total_cost=data['total_cost'],
-        people_count=data['people']  # Odamlar sonini qo'shamiz
+        people_count=data['people']
     )
-
+    
     if success:
         await call.message.answer(
-            "✅ Xona muvaffaqiyatli bron qilindi!\n"
-            f"💰 Umumiy narx: {data['total_cost']}$\n"
-            f"👥 Odamlar soni: {data['people']}\n"
-            f"Xona raqami: {data['room_number']}\n"
-            f"Xona LVL: {data['room_class']}\n"
+            "✅ Xona muvaffaqiyatli bron qilindi!\n" + booking_details
         )
+        
+        # Email yuborish
+        send_booking_email(user_email, booking_details)
     else:
         await call.message.answer("❗ Xona bron qilishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.")
-
+    
     await state.finish()
+
 
 
 # Cancel booking
@@ -301,12 +301,12 @@ async def get_history(message: types.Message):
         response = "📋 Sizning bronlangan xonalar:\n\n"
         for idx, booking in enumerate(bookings, 1):
             response += (
-                f"{idx}. Xona raqami: {booking[0]}\n"
-                f"   Xona sinfi: {booking[1].capitalize()}\n"
-                f"   Odamlar soni: {booking[2]}\n"
-                f"   Boshlanish kuni: {booking[3]}\n"
-                f"   Davomiylik: {booking[4]} kun\n"
-                f"   Umumiy narx: {booking[5]}$\n\n"
+                f"{idx}. 🔢 Xona raqami: {booking[0]}\n"
+                f"   🏨 Xona turi: {booking[1].capitalize()}\n"
+                f"   👥 Odamlar soni: {booking[2]}\n"
+                f"   📅 Boshlanish kuni: {booking[3]}\n"
+                f"   ⏳ Davomiylik: {booking[4]} kun\n"
+                f"   💰 Umumiy narx: {booking[5]}$\n\n"
             )
     else:
         response = "📋 Sizda bronlangan xonalar mavjud emas."
@@ -353,7 +353,6 @@ async def rate_callback(call: types.CallbackQuery):
     await call.answer()
 
 
-# Error handler for invalid commands or messages
 @dp.message_handler()
 async def default_handler(message: types.Message):
     await message.answer("❗ Noto'g'ri buyruq. Iltimos, menyudan tanlang.", reply_markup=menu_buttons)
