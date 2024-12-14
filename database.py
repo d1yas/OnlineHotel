@@ -1,8 +1,10 @@
+# database.py
 import sqlite3
 
 connect = sqlite3.connect('hotel_db.db', check_same_thread=False)
 cursor = connect.cursor()
 
+# Create tables if they don't exist
 cursor.execute(
     """
     CREATE TABLE IF NOT EXISTS users (
@@ -23,6 +25,7 @@ cursor.execute(
     )
     """
 )
+
 cursor.execute(
     """
     CREATE TABLE IF NOT EXISTS booked_rooms (
@@ -33,11 +36,13 @@ cursor.execute(
         people_count INTEGER,
         phone TEXT,
         fio TEXT,
-        email TEXT
+        email TEXT,
+        start_date TEXT,
+        duration INTEGER,
+        total_cost INTEGER
     )
     """
 )
-connect.commit()
 
 cursor.execute(
     """
@@ -48,19 +53,9 @@ cursor.execute(
     """
 )
 
-cursor.execute("PRAGMA table_info(booked_rooms)")
-columns = [col[1] for col in cursor.fetchall()]
-
-if "start_date" not in columns:
-    cursor.execute("ALTER TABLE booked_rooms ADD COLUMN start_date TEXT")
-if "duration" not in columns:
-    cursor.execute("ALTER TABLE booked_rooms ADD COLUMN duration INTEGER")
-if "total_cost" not in columns:
-    cursor.execute("ALTER TABLE booked_rooms ADD COLUMN total_cost INTEGER")
-
 connect.commit()
 
-
+# Function to add a new user
 def add_user(user_id, phone, fio, email):
     cursor.execute(
         "INSERT INTO users (user_id, phone, fio, email) VALUES (?, ?, ?, ?)",
@@ -68,6 +63,7 @@ def add_user(user_id, phone, fio, email):
     )
     connect.commit()
 
+# Function to retrieve a user by ID
 def get_user_by_id(user_id):
     cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
     row = cursor.fetchone()
@@ -75,14 +71,14 @@ def get_user_by_id(user_id):
         return {"user_id": row[0], "phone": row[1], "fio": row[2], "email": row[3]}
     return None
 
-# Добавление комнаты
+# Function to add a room
 def add_room(table, room_number, room_class):
     cursor.execute(
         f"INSERT INTO {table} (room_number, room_class) VALUES (?, ?)", (room_number, room_class)
     )
     connect.commit()
 
-# Получение комнат
+# Function to get rooms, optionally filtered by class
 def get_rooms(table, room_class=None):
     if room_class:
         cursor.execute(f"SELECT * FROM {table} WHERE room_class = ?", (room_class,))
@@ -90,96 +86,8 @@ def get_rooms(table, room_class=None):
         cursor.execute(f"SELECT * FROM {table}")
     return cursor.fetchall()
 
-# Перемещение комнаты из свободных в забронированные
-# def move_room_to_booked(room_number, people_count, phone=None, fio=None, email=None):
-#     cursor.execute("SELECT * FROM empty_rooms WHERE room_number = ?", (room_number,))
-#     room = cursor.fetchone()
-#     if room:
-#         cursor.execute(
-#             "INSERT INTO booked_rooms (room_number, room_class, people_count, phone, fio, email) VALUES (?, ?, ?, ?, ?, ?)",
-#             (room[1], room[2], people_count, phone, fio, email),
-#         )
-#         cursor.execute("DELETE FROM empty_rooms WHERE room_number = ?", (room_number,))
-#         connect.commit()
-
-# def move_room_to_booked(user_id, room_number, people_count):
-#     try:
-#         # Foydalanuvchi ma'lumotlarini olish
-#         cursor.execute("SELECT phone, fio, email FROM users WHERE user_id = ?", (user_id,))
-#         user = cursor.fetchone()
-#         if not user:
-#             return False  # Foydalanuvchi topilmadi, xatolik
-#
-#         phone, fio, email = user
-#
-#         # Bo'sh xona borligini tekshirish
-#         cursor.execute("SELECT * FROM empty_rooms WHERE room_number = ?", (room_number,))
-#         room = cursor.fetchone()
-#         if not room:
-#             return False  # Xona topilmadi, xatolik
-#
-#         # Xonani booked_rooms jadvaliga o'tkazish
-#         cursor.execute(
-#             """
-#             INSERT INTO booked_rooms (user_id, room_number, room_class, people_count, phone, fio, email)
-#             VALUES (?, ?, ?, ?, ?, ?, ?)
-#             """,
-#             (user_id, room[1], room[2], people_count, phone, fio, email)
-#         )
-#
-#         # Bo'sh xonani o'chirish
-#         cursor.execute("DELETE FROM empty_rooms WHERE room_number = ?", (room_number,))
-#         connect.commit()
-#         return True  # Xona muvaffaqiyatli bron qilindi
-#     except Exception as e:
-#         print(f"Xatolik yuz berdi: {e}")
-#         return False  # Xatolik yuz berdi
-
-
-# ishlidigon code
-# def move_room_to_booked(user_id, room_number, people_count):
-#     try:
-#         # Получаем данные пользователя
-#         cursor.execute("SELECT phone, fio, email FROM users WHERE user_id = ?", (user_id,))
-#         user = cursor.fetchone()
-#         if not user:
-#             print("Пользователь не найден в базе данных!")
-#             return False  # Пользователь не найден
-#
-#         phone, fio, email = user
-#
-#         # Проверяем, что у пользователя есть все необходимые данные
-#         if not phone or not fio or not email:
-#             print("У пользователя отсутствуют обязательные данные для бронирования!")
-#             return False
-#
-#         # Проверяем наличие свободной комнаты
-#         cursor.execute("SELECT * FROM empty_rooms WHERE room_number = ?", (room_number,))
-#         room = cursor.fetchone()
-#         if not room:
-#             print("Комната не найдена среди свободных!")
-#             return False
-#
-#         # Переносим комнату в booked_rooms
-#         cursor.execute(
-#             """
-#             INSERT INTO booked_rooms (user_id, room_number, room_class, people_count, phone, fio, email)
-#             VALUES (?, ?, ?, ?, ?, ?, ?)
-#             """,
-#             (user_id, room[1], room[2], people_count, phone, fio, email)
-#         )
-#
-#         # Удаляем комнату из empty_rooms
-#         cursor.execute("DELETE FROM empty_rooms WHERE room_number = ?", (room_number,))
-#         connect.commit()
-#         print("Комната успешно забронирована!")
-#         return True
-#     except Exception as e:
-#         print(f"Произошла ошибка: {e}")
-#         return False
-
-
-def move_room_to_booked_with_date(user_id, room_number, room_class, start_date, duration, total_cost):
+# Function to move a room to booked_rooms with date and cost
+def move_room_to_booked_with_date(user_id, room_number, room_class, start_date, duration, total_cost, people_count):
     try:
         cursor.execute("SELECT phone, fio, email FROM users WHERE user_id = ?", (user_id,))
         user = cursor.fetchone()
@@ -194,7 +102,7 @@ def move_room_to_booked_with_date(user_id, room_number, room_class, start_date, 
             INSERT INTO booked_rooms (user_id, room_number, room_class, people_count, phone, fio, email, start_date, duration, total_cost)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (user_id, room_number, room_class, 1, phone, fio, email, start_date, duration, total_cost)
+            (user_id, room_number, room_class, people_count, phone, fio, email, start_date, duration, total_cost)
         )
 
         cursor.execute("DELETE FROM empty_rooms WHERE room_number = ?", (room_number,))
@@ -206,7 +114,7 @@ def move_room_to_booked_with_date(user_id, room_number, room_class, start_date, 
         return False
 
 
-# Инициализация комнат
+# Function to initialize rooms
 def initialize_rooms():
     room_classes = {
         "economy": 30,
@@ -221,6 +129,34 @@ def initialize_rooms():
             add_room("empty_rooms", room_number, room_class)
             room_number += 1
 
+# Initialize rooms if empty_rooms table is empty
 cursor.execute("SELECT COUNT(*) FROM empty_rooms")
 if cursor.fetchone()[0] == 0:
     initialize_rooms()
+
+# Function to add a rating
+def add_rating(user_id, rating):
+    cursor.execute(
+        "INSERT INTO ratings (user_id, rating) VALUES (?, ?)",
+        (user_id, rating)
+    )
+    connect.commit()
+
+# Function to get average rating
+def get_average_rating():
+    cursor.execute("SELECT AVG(rating) FROM ratings")
+    avg = cursor.fetchone()[0]
+    return avg if avg else 0
+
+# Function to check if a user has rated
+def has_rated(user_id):
+    cursor.execute("SELECT rating FROM ratings WHERE user_id = ?", (user_id,))
+    return cursor.fetchone() is not None
+
+# Function to get booked rooms for a user
+def get_booked_rooms(user_id):
+    cursor.execute(
+        "SELECT room_number, room_class, people_count, start_date, duration, total_cost FROM booked_rooms WHERE user_id = ?",
+        (user_id,)
+    )
+    return cursor.fetchall()

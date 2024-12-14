@@ -7,47 +7,17 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.utils.executor import start_polling
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from datetime import datetime
-from database_v2 import *
+from database import *
 from config import API_TOKEN
-from keyboards.default.def_menu import menu_buttons
-from keyboards.inline.inline_buttons import confirm_buttons, star_choose
+from keyboards.default.def_menu import *
+from keyboards.inline.inline_buttons import *
 from describe import *
+from state import BookingStates
 from send_email import send_booking_email
 
-
-ROOM_PRICES = {
-    "economy": 10,
-    "standard": 30,
-    "comfort": 80,
-    "business": 300,
-    "vip": 800,
-}
-
-ROOM_DESCRIPTIONS = {
-    "economy": description_for_eco,
-    "standard": description_for_standart,
-    "comfort": description_for_comfort,
-    "business": description_for_business,
-    "vip": description_for_vip,
-}
-
-ROOM_IMAGES = {
-    "economy": "images/econom-class-room.jpg",
-    "standard": "images/standart-class-room.jpg",
-    "comfort": "images/comfort-class-room.jpg",
-    "business": "images/business-class-room.jpg",
-    "vip": "images/vip-class-room.jpg",
-}
+from room_data import ROOM_DESCRIPTIONS, ROOM_IMAGES, ROOM_PRICES
 
 
-class BookingStates(StatesGroup):
-    get_phone = State()
-    get_fio = State()
-    get_email = State()
-    get_start_date = State()
-    get_duration = State()
-    get_people = State()
-    confirm_booking = State()
 
 
 bot = Bot(token=API_TOKEN)
@@ -61,12 +31,16 @@ async def start_handler(message: types.Message):
     if get_user_by_id(user_id):
         await message.answer("Assalomu Aleykum! Xush kelibsiz.", reply_markup=menu_buttons)
     else:
+        # await message.answer(
+        #     "Ro'yxatdan o'tish uchun telefon raqamingizni yuboring:",
+        #     reply_markup=ReplyKeyboardMarkup(resize_keyboard=True).add(
+        #         KeyboardButton("📞 Telefon raqamni yuborish", request_contact=True)
+        #     )
+        # )
         await message.answer(
             "Ro'yxatdan o'tish uchun telefon raqamingizni yuboring:",
-            reply_markup=ReplyKeyboardMarkup(resize_keyboard=True).add(
-                KeyboardButton("📞 Telefon raqamni yuborish", request_contact=True)
+            reply_markup=send_phone_button
             )
-        )
         await BookingStates.get_phone.set()
 
 
