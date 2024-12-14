@@ -1,10 +1,9 @@
-# database.py
 import sqlite3
 
 connect = sqlite3.connect('hotel_db.db', check_same_thread=False)
 cursor = connect.cursor()
 
-# Create tables if they don't exist
+
 cursor.execute(
     """
     CREATE TABLE IF NOT EXISTS users (
@@ -55,7 +54,6 @@ cursor.execute(
 
 connect.commit()
 
-# Function to add a new user
 def add_user(user_id, phone, fio, email):
     cursor.execute(
         "INSERT INTO users (user_id, phone, fio, email) VALUES (?, ?, ?, ?)",
@@ -63,7 +61,6 @@ def add_user(user_id, phone, fio, email):
     )
     connect.commit()
 
-# Function to retrieve a user by ID
 def get_user_by_id(user_id):
     cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
     row = cursor.fetchone()
@@ -71,14 +68,12 @@ def get_user_by_id(user_id):
         return {"user_id": row[0], "phone": row[1], "fio": row[2], "email": row[3]}
     return None
 
-# Function to add a room
 def add_room(table, room_number, room_class):
     cursor.execute(
         f"INSERT INTO {table} (room_number, room_class) VALUES (?, ?)", (room_number, room_class)
     )
     connect.commit()
 
-# Function to get rooms, optionally filtered by class
 def get_rooms(table, room_class=None):
     if room_class:
         cursor.execute(f"SELECT * FROM {table} WHERE room_class = ?", (room_class,))
@@ -86,7 +81,6 @@ def get_rooms(table, room_class=None):
         cursor.execute(f"SELECT * FROM {table}")
     return cursor.fetchall()
 
-# Function to move a room to booked_rooms with date and cost
 def move_room_to_booked_with_date(user_id, room_number, room_class, start_date, duration, total_cost, people_count):
     try:
         cursor.execute("SELECT phone, fio, email FROM users WHERE user_id = ?", (user_id,))
@@ -114,7 +108,6 @@ def move_room_to_booked_with_date(user_id, room_number, room_class, start_date, 
         return False
 
 
-# Function to initialize rooms
 def initialize_rooms():
     room_classes = {
         "economy": 30,
@@ -129,12 +122,10 @@ def initialize_rooms():
             add_room("empty_rooms", room_number, room_class)
             room_number += 1
 
-# Initialize rooms if empty_rooms table is empty
 cursor.execute("SELECT COUNT(*) FROM empty_rooms")
 if cursor.fetchone()[0] == 0:
     initialize_rooms()
 
-# Function to add a rating
 def add_rating(user_id, rating):
     cursor.execute(
         "INSERT INTO ratings (user_id, rating) VALUES (?, ?)",
@@ -142,18 +133,15 @@ def add_rating(user_id, rating):
     )
     connect.commit()
 
-# Function to get average rating
 def get_average_rating():
     cursor.execute("SELECT AVG(rating) FROM ratings")
     avg = cursor.fetchone()[0]
     return avg if avg else 0
 
-# Function to check if a user has rated
 def has_rated(user_id):
     cursor.execute("SELECT rating FROM ratings WHERE user_id = ?", (user_id,))
     return cursor.fetchone() is not None
 
-# Function to get booked rooms for a user
 def get_booked_rooms(user_id):
     cursor.execute(
         "SELECT room_number, room_class, people_count, start_date, duration, total_cost FROM booked_rooms WHERE user_id = ?",
