@@ -2,7 +2,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# Email yuborish funksiyasi
+
 def send_booking_email(receiver_email, booking_details):
     sender_email = "onlinehotel.notifications@gmail.com"
     app_password = "your app password"
