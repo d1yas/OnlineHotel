@@ -31,8 +31,6 @@ def get_paged_rooms(rooms, page):
     return rooms[start_idx:end_idx]
 
 
-
-
 @dp.message_handler(commands=['start'])
 async def start_func(message: types.Message):
     user_id = message.from_user.id

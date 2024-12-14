@@ -47,10 +47,19 @@ cursor.execute(
     )
     """
 )
+
+cursor.execute("PRAGMA table_info(booked_rooms)")
+columns = [col[1] for col in cursor.fetchall()]
+
+if "start_date" not in columns:
+    cursor.execute("ALTER TABLE booked_rooms ADD COLUMN start_date TEXT")
+if "duration" not in columns:
+    cursor.execute("ALTER TABLE booked_rooms ADD COLUMN duration INTEGER")
+if "total_cost" not in columns:
+    cursor.execute("ALTER TABLE booked_rooms ADD COLUMN total_cost INTEGER")
+
 connect.commit()
 
-
-connect.commit()
 
 def add_user(user_id, phone, fio, email):
     cursor.execute(
@@ -126,45 +135,74 @@ def get_rooms(table, room_class=None):
 #         print(f"Xatolik yuz berdi: {e}")
 #         return False  # Xatolik yuz berdi
 
-def move_room_to_booked(user_id, room_number, people_count):
+
+# ishlidigon code
+# def move_room_to_booked(user_id, room_number, people_count):
+#     try:
+#         # Получаем данные пользователя
+#         cursor.execute("SELECT phone, fio, email FROM users WHERE user_id = ?", (user_id,))
+#         user = cursor.fetchone()
+#         if not user:
+#             print("Пользователь не найден в базе данных!")
+#             return False  # Пользователь не найден
+#
+#         phone, fio, email = user
+#
+#         # Проверяем, что у пользователя есть все необходимые данные
+#         if not phone or not fio or not email:
+#             print("У пользователя отсутствуют обязательные данные для бронирования!")
+#             return False
+#
+#         # Проверяем наличие свободной комнаты
+#         cursor.execute("SELECT * FROM empty_rooms WHERE room_number = ?", (room_number,))
+#         room = cursor.fetchone()
+#         if not room:
+#             print("Комната не найдена среди свободных!")
+#             return False
+#
+#         # Переносим комнату в booked_rooms
+#         cursor.execute(
+#             """
+#             INSERT INTO booked_rooms (user_id, room_number, room_class, people_count, phone, fio, email)
+#             VALUES (?, ?, ?, ?, ?, ?, ?)
+#             """,
+#             (user_id, room[1], room[2], people_count, phone, fio, email)
+#         )
+#
+#         # Удаляем комнату из empty_rooms
+#         cursor.execute("DELETE FROM empty_rooms WHERE room_number = ?", (room_number,))
+#         connect.commit()
+#         print("Комната успешно забронирована!")
+#         return True
+#     except Exception as e:
+#         print(f"Произошла ошибка: {e}")
+#         return False
+
+
+def move_room_to_booked_with_date(user_id, room_number, room_class, start_date, duration, total_cost):
     try:
-        # Получаем данные пользователя
         cursor.execute("SELECT phone, fio, email FROM users WHERE user_id = ?", (user_id,))
         user = cursor.fetchone()
         if not user:
-            print("Пользователь не найден в базе данных!")
-            return False  # Пользователь не найден
+            print("Foydalanuvchi topilmadi.")
+            return False
 
         phone, fio, email = user
 
-        # Проверяем, что у пользователя есть все необходимые данные
-        if not phone or not fio or not email:
-            print("У пользователя отсутствуют обязательные данные для бронирования!")
-            return False
-
-        # Проверяем наличие свободной комнаты
-        cursor.execute("SELECT * FROM empty_rooms WHERE room_number = ?", (room_number,))
-        room = cursor.fetchone()
-        if not room:
-            print("Комната не найдена среди свободных!")
-            return False
-
-        # Переносим комнату в booked_rooms
         cursor.execute(
             """
-            INSERT INTO booked_rooms (user_id, room_number, room_class, people_count, phone, fio, email)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO booked_rooms (user_id, room_number, room_class, people_count, phone, fio, email, start_date, duration, total_cost)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (user_id, room[1], room[2], people_count, phone, fio, email)
+            (user_id, room_number, room_class, 1, phone, fio, email, start_date, duration, total_cost)
         )
 
-        # Удаляем комнату из empty_rooms
         cursor.execute("DELETE FROM empty_rooms WHERE room_number = ?", (room_number,))
         connect.commit()
-        print("Комната успешно забронирована!")
+        print("Xona muvaffaqiyatli bron qilindi!")
         return True
     except Exception as e:
-        print(f"Произошла ошибка: {e}")
+        print(f"Xatolik yuz berdi: {e}")
         return False
 
 

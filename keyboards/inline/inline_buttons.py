@@ -28,3 +28,9 @@ star_choose = InlineKeyboardMarkup(
         ]
     ]
 )
+
+
+confirm_buttons = InlineKeyboardMarkup(row_width=1).add(
+    InlineKeyboardButton("✅ Tasdiqlash", callback_data="confirm_booking"),
+    InlineKeyboardButton("❌ Bekor qilish", callback_data="cancel_booking")
+)
