@@ -4,8 +4,8 @@ from email.mime.multipart import MIMEMultipart
 
 
 def send_booking_email(receiver_email, booking_details):
-    sender_email = "onlinehotel.notifications@gmail.com"
-    app_password = "your app password"
+    sender_email = "newkingg08@gmail.com"
+    app_password = "pvrd qxfk sdsd znlf"
     
     subject = "Xonangiz muvaffaqiyatli bron qilindi!"
     body = (
